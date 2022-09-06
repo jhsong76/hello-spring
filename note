@@ -17,3 +17,76 @@ Gradle은 의존관계가 있는 라이브러리를 함께 다운로드 한다.
   - mockito: 목 라이브러리
   - assertj: 테스트 코드를 좀 더 편하게 작성하게 도와주는 라이브러리
   - spring-test: 스프링 통합 테스트 지원
+
+
+
+ select 조회 예시
+
+1. 데이터를 저장할 객체를 생성
+    - 롬복을 사용하지 않을 경우 직접 getter & setter 생성
+
+    NewsEntity.java
+
+    public class NewsEntity {
+        private String title;
+        private String journalist;
+        private String publisher;
+        private String reg_dt;
+    }
+
+2. sql 코드와 맵핑되는 메소드를 인터페이스로 생성하며 인터페이스에 Mapper 어노테이션 지정
+
+    INewsDAO.java
+
+    @Mapper
+    public interface INewsDAO {
+        public List<NewsEntity> listNews();
+    }
+
+3. 조회 시 실행 할 Controller 생성
+
+    NewsController.java
+
+    @Controller
+    public class NewsController {
+
+        private Logger logger = LoggerFactory.getLogger(NewsController.class);
+
+        @Autowired
+        	private INewsDAO newDAO;
+
+        	@RequestMapping("/news")
+        	public @ResponseBody Map<String, Object> news() throws Exception {
+        		Map<String, Object> rtnObj = new HashMap<> ();
+
+        		List<NewsEntity> newsList = newDAO.listNews();
+        		logger.info("news->" + newsList.toString());
+
+        		rtnObj.put("news_list", newsList);
+        		return rtnObj;
+        	}
+    }
+
+4. sql문과 설정이 담겨져있는 News.xml Mapper 코드를 생성
+
+    News.xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE mapper
+    	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    <mapper namespace="dev.zeronelab.mybatis.dao.INewsDAO">
+
+    	<!-- 뉴스 조회 -->
+    	<select id="listNews" resultType="dev.zeronelab.mybatis.vo.NewsEntity">
+    		select title, journalist, publisher, reg_dt from news
+    	</select>
+    </mapper>
+
+    mapper namespace는 매퍼코드와 1:1 매핑을 시킬 객체를 지정하며 (INewsDAO), INewsDAO에 있는 listNews 메소드명과 동일한 이름(id)를 가진 select을 생성
+    resultType의 경우 결과를 어떤 Entity로 받을 것인지를 나타내며, 여기서는 News만을 위한 NewsEntity 클래스가 있기에 해당 클래스를 지정한다.
+    그리고 select xml안에는 결과를 조회할 쿼리를 지정한다.
+
+
+
